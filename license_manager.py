@@ -25,7 +25,7 @@ import requests
 
 # ── Your Keygen.sh credentials ────────────────────────────────────────────────
 # Sign up at https://app.keygen.sh → Settings → copy your Account ID
-KEYGEN_ACCOUNT_ID = "YOUR_ACCOUNT_ID_HERE"
+KEYGEN_ACCOUNT_ID = "33e8f944-6a41-47a3-bc20-1b6aa875869f"
 
 # ── Local cache ───────────────────────────────────────────────────────────────
 # Stored in the user's home folder — survives app updates
