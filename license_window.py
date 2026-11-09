@@ -117,7 +117,7 @@ class LicenseWindow:
         # Key format hint
         tk.Label(
             card,
-            text="Format: XXXX-XXXX-XXXX-XXXX-XXXX  (provided at purchase)",
+            text="Paste the full key provided at purchase (starts with  key/…)",
             bg=BG_CARD, fg=FG_DIM, font=("Helvetica", 9),
         ).grid(row=3, column=0, columnspan=2, sticky="w", pady=(4, 20))
 
