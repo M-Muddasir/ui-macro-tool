@@ -51,6 +51,12 @@ jobs:
             --hidden-import=mouseinfo `
             --hidden-import=pygetwindow `
             --hidden-import=pytweening `
+            --hidden-import=requests `
+            --hidden-import=requests.adapters `
+            --hidden-import=requests.auth `
+            --hidden-import=requests.exceptions `
+            --hidden-import=urllib3 `
+            --hidden-import=certifi `
             main.py
 
       # ── 5. Upload .exe as downloadable artifact ───────────────────────────

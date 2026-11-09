@@ -478,8 +478,19 @@ def main() -> None:
     # GUI MODE  (default — shows settings window, then status window)
     # ══════════════════════════════════════════════════════════════════════════
     if not parsed.no_gui:
+        from license_manager import LicenseManager
+        from license_window import LicenseWindow
         from settings_window import MacroConfig, SettingsWindow
         from ui_window import MacroStatusWindow
+
+        # ── License check ─────────────────────────────────────────────────────
+        lm = LicenseManager()
+        cached = lm.check_cached()
+        if not cached.success:
+            # Show activation window; exit if user cancels
+            activated = LicenseWindow().run()
+            if not activated:
+                sys.exit(0)
 
         # Pre-fill form from config.json if present
         saved = cfg_module.load()
