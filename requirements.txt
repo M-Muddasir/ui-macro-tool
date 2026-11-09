@@ -1,0 +1,9 @@
+# Core — required on all platforms
+pyautogui>=0.9.54
+rich>=13.0.0
+
+# macOS only — PyAutoGUI needs these to control the display and input
+# Install on Mac with: pip install pyobjc-framework-Quartz pyobjc-framework-ApplicationServices
+# Not needed on Windows or Linux
+pyobjc-framework-Quartz>=10.0; sys_platform == "darwin"
+pyobjc-framework-ApplicationServices>=10.0; sys_platform == "darwin"

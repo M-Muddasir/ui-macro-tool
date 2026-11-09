@@ -1,0 +1,62 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:          # also lets you trigger manually from GitHub UI
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      # ── 1. Get the code ───────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Python ─────────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # ── 3. Install packages ───────────────────────────────────────────────
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pillow
+          pip install -r requirements.txt
+
+      # ── 4. Build the .exe ─────────────────────────────────────────────────
+      - name: Build standalone EXE
+        run: |
+          pyinstaller `
+            --onefile `
+            --windowed `
+            --name "UI Macro Tool" `
+            --hidden-import=tkinter `
+            --hidden-import=tkinter.ttk `
+            --hidden-import=tkinter.messagebox `
+            --hidden-import=rich `
+            --hidden-import=rich.console `
+            --hidden-import=rich.logging `
+            --hidden-import=rich.live `
+            --hidden-import=rich.panel `
+            --hidden-import=rich.table `
+            --hidden-import=rich.prompt `
+            --hidden-import=rich.box `
+            --hidden-import=pyautogui `
+            --hidden-import=pyscreeze `
+            --hidden-import=mouseinfo `
+            --hidden-import=pygetwindow `
+            --hidden-import=pytweening `
+            main.py
+
+      # ── 5. Upload .exe as downloadable artifact ───────────────────────────
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UI-Macro-Tool-Windows
+          path: dist\UI Macro Tool.exe
+          retention-days: 90
