@@ -180,7 +180,7 @@ class LicenseManager:
                     days)
 
             # ── Need to activate this machine ─────────────────────────────
-            if code == "FINGERPRINT_SCOPE_MISMATCH" and lic_id:
+            if code in ("FINGERPRINT_SCOPE_MISMATCH", "NO_MACHINE") and lic_id:
                 act = self._activate_machine(key, lic_id)
                 if "errors" not in act:
                     days = self._days_remaining(expiry)
