@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import threading
 import tkinter as tk
-from tkinter import font as tkfont
 from typing import Optional
 
 from license_manager import LicenseManager, LicenseResult
@@ -49,10 +48,9 @@ class LicenseWindow:
     """
 
     def __init__(self) -> None:
-        self._manager   = LicenseManager()
-        self._result:   Optional[LicenseResult] = None
-        self._root:     Optional[tk.Tk] = None
-        self._activated = threading.Event()
+        self._manager = LicenseManager()
+        self._result: Optional[LicenseResult] = None
+        self._root:   Optional[tk.Tk] = None
 
     # ── Build UI ───────────────────────────────────────────────────────────────
 
@@ -61,102 +59,132 @@ class LicenseWindow:
         self._root = root
         root.title("UI Macro Tool — License Activation")
         root.configure(bg=BG)
-        root.resizable(False, False)
+        root.resizable(True, True)
+        root.minsize(420, 340)
 
-        # Centre on screen
-        w, h = 480, 380
+        # Centre on screen at a generous default size
+        w, h = 520, 420
         sw = root.winfo_screenwidth()
         sh = root.winfo_screenheight()
+        # Stay on screen even on small displays
+        h = min(h, sh - 80)
+        w = min(w, sw - 40)
         root.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
 
-        # Header strip
-        hdr = tk.Frame(root, bg=BG_HEADER, height=56)
-        hdr.pack(fill="x")
+        # ── Header (fixed at top) ─────────────────────────────────────────────
+        hdr = tk.Frame(root, bg=BG_HEADER, height=52)
+        hdr.pack(fill="x", side="top")
         hdr.pack_propagate(False)
         tk.Label(
             hdr, text="UI Macro Tool",
             bg=BG_HEADER, fg=FG_WHITE,
-            font=("Helvetica", 17, "bold"),
-        ).pack(side="left", padx=20, pady=0)
+            font=("Helvetica", 16, "bold"),
+        ).pack(side="left", padx=20)
         tk.Label(
             hdr, text="License Activation",
             bg=BG_HEADER, fg=FG_LABEL,
-            font=("Helvetica", 12),
+            font=("Helvetica", 11),
         ).pack(side="right", padx=20)
 
-        # Card
-        card = tk.Frame(root, bg=BG_CARD, padx=28, pady=24)
-        card.pack(fill="both", expand=True, padx=16, pady=16)
-
-        # Subtitle
-        tk.Label(
-            card,
-            text="Enter your license key to activate this software.",
-            bg=BG_CARD, fg=FG_LABEL,
-            font=("Helvetica", 11),
-            wraplength=400, justify="left",
-        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 18))
-
-        # Key label + entry
-        tk.Label(card, text="License Key", bg=BG_CARD, fg=FG_LABEL,
-                 font=("Helvetica", 10)).grid(row=1, column=0, sticky="w", pady=(0, 4))
-
-        self._key_var = tk.StringVar()
-        entry = tk.Entry(
-            card,
-            textvariable=self._key_var,
-            bg=BG_ENTRY, fg=FG_WHITE, insertbackground=FG_WHITE,
-            relief="flat", bd=0,
-            font=("Courier", 13),
-            width=34,
-        )
-        entry.grid(row=2, column=0, columnspan=2, sticky="ew", ipady=8)
-        entry.bind("<Return>", lambda _: self._on_activate())
-        entry.focus_set()
-
-        # Key format hint
-        tk.Label(
-            card,
-            text="Paste the full key provided at purchase (starts with  key/…)",
-            bg=BG_CARD, fg=FG_DIM, font=("Helvetica", 9),
-        ).grid(row=3, column=0, columnspan=2, sticky="w", pady=(4, 20))
-
-        # Status / message label
-        self._msg_var = tk.StringVar(value="")
-        self._msg_lbl = tk.Label(
-            card, textvariable=self._msg_var,
-            bg=BG_CARD, fg=FG_WARN,
-            font=("Helvetica", 10), wraplength=400, justify="left",
-        )
-        self._msg_lbl.grid(row=4, column=0, columnspan=2, sticky="w", pady=(0, 16))
-
-        # Buttons row
-        btn_frame = tk.Frame(card, bg=BG_CARD)
-        btn_frame.grid(row=5, column=0, columnspan=2, sticky="ew")
+        # ── Buttons bar (pinned to bottom so they're always visible) ──────────
+        btn_bar = tk.Frame(root, bg=BG, pady=12)
+        btn_bar.pack(fill="x", side="bottom", padx=20)
 
         self._act_btn = self._make_btn(
-            btn_frame, "  Activate  ",
+            btn_bar, "  Activate  ",
             self._on_activate, BTN_ACTIVATE, BTN_ACTIVATE_HV,
             font=("Helvetica", 12, "bold"), fg=FG_WHITE,
         )
         self._act_btn.pack(side="left", padx=(0, 10))
 
         self._make_btn(
-            btn_frame, "  Cancel  ",
+            btn_bar, "  Cancel  ",
             self._on_cancel, BTN_CLOSE, BTN_CLOSE_HV,
             font=("Helvetica", 12), fg=FG_DIM,
         ).pack(side="left")
 
-        # Days-remaining footer (hidden until activation succeeds)
+        # Days-remaining label sits next to buttons
         self._days_lbl = tk.Label(
-            card, text="",
-            bg=BG_CARD, fg=FG_OK,
+            btn_bar, text="",
+            bg=BG, fg=FG_OK,
             font=("Helvetica", 10, "italic"),
         )
-        self._days_lbl.grid(row=6, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self._days_lbl.pack(side="left", padx=16)
 
-        card.columnconfigure(0, weight=1)
-        card.columnconfigure(1, weight=0)
+        # ── Scrollable content area ───────────────────────────────────────────
+        canvas = tk.Canvas(root, bg=BG_CARD, highlightthickness=0)
+        scrollbar = tk.Scrollbar(root, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True, padx=(12, 0), pady=(8, 0))
+
+        inner = tk.Frame(canvas, bg=BG_CARD)
+        inner_id = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        def _on_resize(event):
+            canvas.itemconfig(inner_id, width=event.width)
+        canvas.bind("<Configure>", _on_resize)
+
+        def _on_inner_resize(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        inner.bind("<Configure>", _on_inner_resize)
+
+        # Mouse-wheel scrolling (Windows + macOS)
+        def _on_mousewheel(event):
+            if event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+            else:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        canvas.bind_all("<Button-4>",   _on_mousewheel)
+        canvas.bind_all("<Button-5>",   _on_mousewheel)
+
+        # ── Content inside scroll area ────────────────────────────────────────
+        pad = {"padx": 24, "pady": 0}
+
+        tk.Label(
+            inner,
+            text="Enter your license key to activate this software.",
+            bg=BG_CARD, fg=FG_LABEL,
+            font=("Helvetica", 11),
+            wraplength=440, justify="left",
+        ).pack(anchor="w", pady=(22, 14), **pad)
+
+        tk.Label(
+            inner, text="License Key",
+            bg=BG_CARD, fg=FG_LABEL,
+            font=("Helvetica", 10),
+        ).pack(anchor="w", **pad)
+
+        self._key_var = tk.StringVar()
+        entry = tk.Entry(
+            inner,
+            textvariable=self._key_var,
+            bg=BG_ENTRY, fg=FG_WHITE, insertbackground=FG_WHITE,
+            relief="flat", bd=0,
+            font=("Courier", 12),
+        )
+        entry.pack(fill="x", ipady=8, pady=(4, 0), **pad)
+        entry.bind("<Return>", lambda _: self._on_activate())
+        entry.focus_set()
+
+        tk.Label(
+            inner,
+            text="Paste the full key provided at purchase (starts with  key/…)",
+            bg=BG_CARD, fg=FG_DIM, font=("Helvetica", 9),
+        ).pack(anchor="w", pady=(4, 16), **pad)
+
+        # Status message label
+        self._msg_var = tk.StringVar(value="")
+        self._msg_lbl = tk.Label(
+            inner, textvariable=self._msg_var,
+            bg=BG_CARD, fg=FG_WARN,
+            font=("Helvetica", 10), wraplength=440, justify="left",
+        )
+        self._msg_lbl.pack(anchor="w", pady=(0, 10), **pad)
 
     # ── Button factory ─────────────────────────────────────────────────────────
 
@@ -172,9 +200,9 @@ class LicenseWindow:
             padx=14, pady=7,
             cursor="hand2",
         )
-        lbl.bind("<Button-1>",   lambda _: command())
-        lbl.bind("<Enter>",      lambda _: lbl.config(bg=hover_bg))
-        lbl.bind("<Leave>",      lambda _: lbl.config(bg=bg))
+        lbl.bind("<Button-1>", lambda _: command())
+        lbl.bind("<Enter>",    lambda _: lbl.config(bg=hover_bg))
+        lbl.bind("<Leave>",    lambda _: lbl.config(bg=bg))
         return lbl
 
     # ── Activation flow ────────────────────────────────────────────────────────
@@ -199,15 +227,14 @@ class LicenseWindow:
 
         if result.success:
             self._show_msg("", FG_OK)
-            days_txt = ""
-            if result.days_remaining is not None:
-                days_txt = f"Key valid — {result.days_remaining} day(s) remaining."
-            else:
-                days_txt = "Key active."
+            days_txt = (
+                f"Activated — {result.days_remaining} day(s) remaining."
+                if result.days_remaining is not None
+                else "Key active."
+            )
             self._days_lbl.config(text=days_txt, fg=FG_OK)
             self._result = result
-            # Brief pause so the user can see the success message, then close
-            self._root.after(1200, self._root.destroy)
+            self._root.after(1400, self._root.destroy)
         else:
             self._show_msg(result.message, FG_ERROR)
 
